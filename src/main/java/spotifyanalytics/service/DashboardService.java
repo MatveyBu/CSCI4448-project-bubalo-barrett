@@ -2,6 +2,7 @@ package spotifyanalytics.service;
 
 import spotifyanalytics.metrics.ListeningMetric;
 import spotifyanalytics.metrics.MetricResult;
+import spotifyanalytics.domain.PlayedTrack;
 
 import java.util.List;
 import java.util.*;
@@ -13,7 +14,7 @@ public class DashboardService {
         this.metrics = metrics;
     }
 
-    public Map<String, MetricResult<?>> compute(List<spotifyanalytics.PlayedTrack> history) {
+    public Map<String, MetricResult<?>> compute(List<PlayedTrack> history) {
         Map<String, MetricResult<?>> results = new LinkedHashMap<>();
         for (ListeningMetric<?> metric: metrics){
             results.put(metric.getName(), metric.compute(history));

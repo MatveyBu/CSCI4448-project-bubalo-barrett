@@ -1,4 +1,4 @@
-package metrics;
+package spotifyanalytics.metrics;
 
 //<T> is a placeholder for any datatype
 public class MetricResult<ResultType> {

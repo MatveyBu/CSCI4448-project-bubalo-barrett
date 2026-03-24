@@ -11,6 +11,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TopArtistsMetricTest {
+
     private List<PlayedTrack> sampleHistory() {
         Artist radiohead = new Artist("1", "Radiohead");
         Artist arcade = new Artist("2", "Arcade Fire");

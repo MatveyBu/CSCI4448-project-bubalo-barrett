@@ -1,31 +1,47 @@
-# CSCI4448-project-bubalo-barett
+# Spotify Listening Analytics
 
-## Package Structure
+A Java web application that connects to the Spotify API to import a user's listening
+history and display analytics on a dashboard. The app tracks top artists, top tracks,
+and total time listened, with data persisted in a SQL database to support trend analysis
+over weeks and months.
 
-### `spotifyanalytics.domain`
-The raw data of the application. These classes represent real world things — artists, songs, plays.
-They have no logic, no dependencies on anything else in the project, and no opinion about what you
-do with them. Everything else in the project depends on these. Think of it as the **vocabulary** of the app.
+## Design Patterns
 
-### `spotifyanalytics.metrics`
-The intelligence of the application. This is where the Strategy pattern lives — the interface defines
-what a metric is, and each implementation defines how to compute one. This package takes spotifyanalytics.domain data
-as input and produces results as output. It knows about `spotifyanalytics.domain` but nothing else.
+### 1. Strategy Pattern
+Used in the `metrics` package through the `ListeningMetric` interface. Each metric class
+(`TopArtistsMetric`, `TopTracksMetric`, `TimeListenedMetric`) implements this interface
+and provides its own `compute()` logic. `DashboardService` holds a list of `ListeningMetric`
+objects and calls `compute()` on each without knowing the concrete type, allowing new
+metrics to be added without changing existing code.
 
-### `spotifyanalytics.service`
-The coordination layer. Classes here don't compute or store anything themselves — they wire other
-pieces together and orchestrate the work. `DashboardService` sits here because its only job is to
-run spotifyanalytics.metrics against history and collect results. It knows about both `spotifyanalytics.domain` and `spotifyanalytics.metrics` but has
-no logic of its own.
+### 2. Factory Pattern
+Used in `MetricFactory`, the single place responsible for constructing and assembling
+the list of metrics. A `DEFAULT_LIMIT` constant centralizes configuration so nothing
+outside this class needs to know which metrics exist or how to build them.
 
-## Dependency Flow
-```
-spotifyanalytics.domain      ← knows about nothing else
-  ↑
-spotifyanalytics.metrics     ← knows about spotifyanalytics.domain
-  ↑
-spotifyanalytics.service     ← knows about spotifyanalytics.domain and spotifyanalytics.metrics
-```
+### 3. Facade Pattern
+Used in the `spotifyanalytics.integration` package through the `SpotifyClient` interface,
+which provides simple methods like `getRecentlyPlayed(int limit)` and
+`getTopTracks(int limit)`. This abstraction will hide lower-level integration details
+such as OAuth, HTTP requests, rate limiting, and JSON parsing from the rest of the
+application. `FakeSpotifyClient` is the current implementation used for hardcoded
+development/testing data, while a real API-backed client can be added later without
+changing code that depends on the facade.
 
-Each layer only looks downward. `spotifyanalytics.service` is never imported by `spotifyanalytics.metrics`, and `spotifyanalytics.metrics` is never
-imported by `spotifyanalytics.domain`. That one-way dependency flow is what keeps the design clean and testable.
+
+## OO Principles
+
+### Coding to Abstractions
+`DashboardService` never references a concrete metric class. It only knows about
+`ListeningMetric<?>`, meaning the dashboard works correctly regardless of which
+metrics are injected into it.
+
+### Polymorphism
+`DashboardService.compute()` iterates over a list of `ListeningMetric` objects
+and calls `compute()` on each. Each call dispatches to a different implementation at
+runtime, handling artists, tracks, and time through one shared interface.
+
+### Dependency Injection
+`DashboardService` receives its list of metrics through its constructor rather than
+creating them itself. The caller controls which metrics the dashboard uses, making it
+easy to swap implementations for testing or extend behavior without touching the service.

@@ -1,7 +1,5 @@
 package spotifyanalytics.domain;
 
-import spotifyanalytics.Track;
-
 import java.time.Instant;
 
 public class PlayedTrack

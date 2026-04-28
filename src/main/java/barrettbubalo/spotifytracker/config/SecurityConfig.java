@@ -18,7 +18,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/health").permitAll()
-                .requestMatchers("/api/spotify/**").permitAll() // REMOVE AS SOON AS POSSIBLE!
+                //.requestMatchers("/api/spotify/**").permitAll() // REMOVE AS SOON AS POSSIBLE!
+                .requestMatchers("/login.html").permitAll()
                 .anyRequest().authenticated()
             )
             .csrf(csrf -> csrf.disable())

@@ -4,11 +4,17 @@ import barrettbubalo.spotifytracker.model.Account;
 import barrettbubalo.spotifytracker.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletRequest;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import java.util.Collections;
 
 import java.util.Map;
 import java.util.Optional;
@@ -58,7 +64,13 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Invalid password");
         }
 
+        // Register with Spring Security
+        UsernamePasswordAuthenticationToken auth = 
+            new UsernamePasswordAuthenticationToken(account.get().getId(), null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
         HttpSession session = request.getSession(true);
+        session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
         session.setAttribute("accountId", account.get().getId());
         session.setAttribute("email", account.get().getEmail());
 
@@ -90,5 +102,14 @@ public class AuthController {
             session.invalidate();
         }
         return ResponseEntity.ok("Logged out");
+    }
+
+    @GetMapping("/test-session")
+    public ResponseEntity<?> testSession(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return ResponseEntity.ok("No session");
+        }
+        return ResponseEntity.ok("Session found, accountId: " + session.getAttribute("accountId"));
     }
 }

@@ -14,7 +14,7 @@ public class Track {
     private Long id;
 
     // Spotify's unique identifier for this track
-    @Column(unique = true, nullable = false)
+    @Column(unique = true)
     private String spotifyId;
 
     @Column(nullable = false)
@@ -22,7 +22,8 @@ public class Track {
 
     // could replace with artist entity in future
     @ManyToOne
-    @JoinColumn(name = "main_artist_id", nullable = false)
+    //@JoinColumn(name = "main_artist_id", nullable = false)
+    @JoinColumn(name = "main_artist_id")
     private Artist mainArtist;
 
     @ManyToMany
@@ -33,7 +34,9 @@ public class Track {
     )
     private List<Artist> artists;
 
-    private String albumName;
+    @ManyToOne
+    @JoinColumn(name = "album_id", nullable = true)
+    private Album album;
 
     // Album art URL from Spotify
     private String albumImageUrl;
@@ -47,9 +50,6 @@ public class Track {
 
     // Preview URL — 30-second audio clip if available
     private String previewUrl;
-
-    // Track popularity (0-100) from Spotify
-    private Integer popularity;
 
     // Whether the track contains explicit content
     private boolean explicit;
@@ -66,11 +66,11 @@ public class Track {
     public Track() {}
 
     // Convenience constructor for creating a track from Spotify API data
-    public Track(String spotifyId, String name, Artist mainArtist, String albumName, int durationMs) {
+    public Track(String spotifyId, String name, Artist mainArtist, Album album, int durationMs) {
         this.spotifyId = spotifyId;
         this.name = name;
         this.mainArtist = mainArtist;
-        this.albumName = albumName;
+        this.album = album;
         this.durationMs = durationMs;
     }
 
@@ -124,12 +124,12 @@ public class Track {
         this.artists = artists;
     }
 
-    public String getAlbumName() {
-        return albumName;
+    public Album getAlbum() {
+        return album;
     }
 
-    public void setAlbumName(String albumName) {
-        this.albumName = albumName;
+    public void setAlbum(Album album) {
+        this.album = album;
     }
 
     public String getAlbumImageUrl() {
@@ -162,14 +162,6 @@ public class Track {
 
     public void setPreviewUrl(String previewUrl) {
         this.previewUrl = previewUrl;
-    }
-
-    public Integer getPopularity() {
-        return popularity;
-    }
-
-    public void setPopularity(Integer popularity) {
-        this.popularity = popularity;
     }
 
     public boolean isExplicit() {

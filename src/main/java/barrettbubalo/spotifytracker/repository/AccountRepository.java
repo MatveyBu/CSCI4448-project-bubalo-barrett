@@ -9,4 +9,5 @@ import java.util.*;
 public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByEmail(String email);
     Optional<Account> findByDisplayName(String displayName);
+    List<Account> findByRefreshTokenIsNotNull();
 }

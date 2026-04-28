@@ -21,9 +21,17 @@ public class Track {
     private String name;
 
     // could replace with artist entity in future
-    private String mainArtist;
+    @ManyToOne
+    @JoinColumn(name = "main_artist_id", nullable = false)
+    private Artist mainArtist;
 
-    private List<String> artists;
+    @ManyToMany
+    @JoinTable(
+        name = "track_artists",
+        joinColumns = @JoinColumn(name = "track_id"),
+        inverseJoinColumns = @JoinColumn(name = "artist_id")
+    )
+    private List<Artist> artists;
 
     private String albumName;
 
@@ -58,7 +66,7 @@ public class Track {
     public Track() {}
 
     // Convenience constructor for creating a track from Spotify API data
-    public Track(String spotifyId, String name, String mainArtist, String albumName, int durationMs) {
+    public Track(String spotifyId, String name, Artist mainArtist, String albumName, int durationMs) {
         this.spotifyId = spotifyId;
         this.name = name;
         this.mainArtist = mainArtist;
@@ -100,19 +108,19 @@ public class Track {
         this.name = name;
     }
 
-    public String getMainArtist() {
+    public Artist getMainArtist() {
         return mainArtist;
     }
 
-    public void setMainArtist(String mainArtist) {
+    public void setMainArtist(Artist mainArtist) {
         this.mainArtist = mainArtist;
     }
 
-    public List<String> getAllArtist() {
+    public List<Artist> getAllArtist() {
         return artists;
     }
 
-    public void setAllArtist(List<String> artists) {
+    public void setAllArtist(List<Artist> artists) {
         this.artists = artists;
     }
 

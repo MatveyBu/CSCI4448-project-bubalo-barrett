@@ -2,6 +2,7 @@ package barrettbubalo.spotifytracker.repository;
 
 import barrettbubalo.spotifytracker.model.ListeningRecord;
 import barrettbubalo.spotifytracker.model.Account;
+import barrettbubalo.spotifytracker.model.Artist;
 import barrettbubalo.spotifytracker.model.Track;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,4 +13,7 @@ public interface ListeningRecordRepository extends JpaRepository<ListeningRecord
     List<ListeningRecord> findByAccountId(Long accountId);
     List<ListeningRecord> findByAccountIdAndPlayedAtAfter(Long accountId, LocalDateTime after);
     boolean existsByAccountAndTrackAndPlayedAt(Account account, Track track, LocalDateTime playedAt);
+    int countByAccount(Account account);
+    int countByAccountAndTrack(Account account, Track track);
+    int countByAccountAndTrackMainArtist(Account account, Artist artist);
 }

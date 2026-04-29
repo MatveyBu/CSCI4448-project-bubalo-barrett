@@ -2,7 +2,7 @@ package barrettbubalo.spotifytracker.controller;
 
 import barrettbubalo.spotifytracker.model.Account;
 import barrettbubalo.spotifytracker.repository.AccountRepository;
-import barrettbubalo.spotifytracker.service.SpotifyApiClient;
+import barrettbubalo.spotifytracker.patterns.facade.SpotifyTrackerFacade;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,8 +12,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.servlet.http.HttpServletResponse;
 
-import jakarta.servlet.http.HttpSession;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
@@ -28,7 +26,7 @@ public class SpotifyAuthController {
     private AccountRepository accountRepository;
 
     @Autowired
-    private SpotifyApiClient spotifyApiClient;
+    private SpotifyTrackerFacade spotifyFacade;
     
     @Value("${spotify.client-id}")
     private String clientId;
@@ -52,11 +50,11 @@ public class SpotifyAuthController {
     @GetMapping("/callback")
     public ResponseEntity<?> callback(@RequestParam String code) {
         Account account = accountRepository.findByEmail("test@test.com").orElseThrow();
-        spotifyApiClient.exchangeCodeForTokens(account, code);
-        return ResponseEntity.ok("Spotify connected!");
+        String message = spotifyFacade.completeSpotifyConnection(account, code);
+        return ResponseEntity.ok(message);
     }
 
-    /* real /callback
+    /* real /callback (using Facade Pattern)
     @GetMapping("/callback")
     public ResponseEntity<?> callback(@RequestParam String code, HttpServletRequest request) {
         HttpSession session = request.getSession(false);
@@ -67,10 +65,10 @@ public class SpotifyAuthController {
         Long accountId = (Long) session.getAttribute("accountId");
         Account account = accountRepository.findById(accountId).orElseThrow();
 
-        spotifyApiClient.exchangeCodeForTokens(account, code);
-
-        return ResponseEntity.ok("Spotify connected");
+        // ONE facade call instead of multiple service calls
+        String message = spotifyFacade.completeSpotifyConnection(account, code);
         
+        return ResponseEntity.ok(message);
     }
     */
 }

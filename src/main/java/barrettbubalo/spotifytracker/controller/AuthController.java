@@ -112,4 +112,20 @@ public class AuthController {
         }
         return ResponseEntity.ok("Session found, accountId: " + session.getAttribute("accountId"));
     }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<?> deleteAccount(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("accountId") == null) {
+            return ResponseEntity.status(401).body("Not logged in");
+        }
+
+        Long accountId = (Long) session.getAttribute("accountId");
+        Account account = accountRepository.findById(accountId).orElseThrow();
+
+        accountRepository.delete(account);
+        session.invalidate();
+
+        return ResponseEntity.ok("Account deleted");
+    }
 }

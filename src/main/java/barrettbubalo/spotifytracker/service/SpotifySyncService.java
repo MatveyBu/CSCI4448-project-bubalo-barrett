@@ -10,6 +10,9 @@ import barrettbubalo.spotifytracker.model.Artist;
 import barrettbubalo.spotifytracker.repository.ArtistRepository;
 import barrettbubalo.spotifytracker.model.Album;
 import barrettbubalo.spotifytracker.repository.AlbumRepository;
+import barrettbubalo.spotifytracker.model.ArtistBuilder;
+import barrettbubalo.spotifytracker.model.AlbumBuilder;
+import barrettbubalo.spotifytracker.model.TrackBuilder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

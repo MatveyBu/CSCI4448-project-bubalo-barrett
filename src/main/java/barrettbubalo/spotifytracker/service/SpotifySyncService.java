@@ -85,41 +85,41 @@ public class SpotifySyncService {
             );
 
             Artist mainArtist = artistRepository.findBySpotifyId(mainArtistSpotifyId)
-                .orElseGet(() -> {
-                    Artist newArtist  = new Artist();
-                    newArtist.setSpotifyId(mainArtistSpotifyId);
-                    newArtist.setName(mainArtistName);
-                    return artistRepository.save(newArtist);
-                });
+                .orElseGet(() -> artistRepository.save(
+                    new ArtistBuilder()
+                        .withSpotifyId(mainArtistSpotifyId)
+                        .withName(mainArtistName)
+                        .build()
+                ));
 
             Artist albumArtist = artistRepository.findBySpotifyId(albumArtistSpotifyId)
-                .orElseGet(() -> {
-                    Artist newArtist  = new Artist();
-                    newArtist.setSpotifyId(albumArtistSpotifyId);
-                    newArtist.setName(albumArtistName);
-                    return artistRepository.save(newArtist);
-                });
+                .orElseGet(() -> artistRepository.save(
+                    new ArtistBuilder()
+                        .withSpotifyId(albumArtistSpotifyId)
+                        .withName(albumArtistName)
+                        .build()
+                ));
 
             Album album = albumRepository.findBySpotifyId(albumSpotifyId)
-                .orElseGet(() -> {
-                    Album newAlbum = new Album();
-                    newAlbum.setSpotifyId(albumSpotifyId);
-                    newAlbum.setName(albumName);
-                    newAlbum.setMainArtist(albumArtist);
-                    newAlbum.setImageUrl(albumImageUrl);
-                    return albumRepository.save(newAlbum);
-                });
+                .orElseGet(() -> albumRepository.save(
+                    new AlbumBuilder()
+                        .withSpotifyId(albumSpotifyId)
+                        .withName(albumName)
+                        .withMainArtist(albumArtist)
+                        .withImageUrl(albumImageUrl)
+                        .build()
+                ));
 
             Track track = trackRepository.findBySpotifyId(trackSpotifyId)
-                .orElseGet(() -> {
-                    Track newTrack = new Track();
-                    newTrack.setSpotifyId(trackSpotifyId);
-                    newTrack.setName(trackName);
-                    newTrack.setDurationMs(trackDurationMs);
-                    newTrack.setMainArtist(mainArtist);
-                    newTrack.setAlbum(album);
-                    return trackRepository.save(newTrack);
-                });     
+                .orElseGet(() -> trackRepository.save(
+                    new TrackBuilder()
+                        .withSpotifyId(trackSpotifyId)
+                        .withName(trackName)
+                        .withDurationMs(trackDurationMs)
+                        .withMainArtist(mainArtist)
+                        .withAlbum(album)
+                        .build()
+                ));     
 
             if (!listeningRecordRepository.existsByAccountAndTrackAndPlayedAt(account, track, playedAt)) {
                 ListeningRecord record = new ListeningRecord(account, track, playedAt);

@@ -192,6 +192,86 @@
             </div>
         </div>
 
+        <!-- Reports Section -->
+        <div class="card" id="reportsCard" style="display: none; margin-bottom: 30px;">
+            <div class="card-header">
+                <h5 class="mb-0">📋 Listening Reports</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" onclick="loadReport('DAILY')">📅 Daily Report</button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" onclick="loadReport('WEEKLY')">📆 Weekly Report</button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" onclick="loadReport('MONTHLY')">📊 Monthly Report</button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" onclick="loadReport('ANNUAL')">📈 Annual Report</button>
+                    </div>
+                </div>
+
+                <!-- Report Date Selection -->
+                <div class="row mb-3" id="reportDateSelection" style="display: none;">
+                    <div class="col-md-3">
+                        <select id="reportYearSelect" class="form-control" onchange="updateReportMonths()">
+                            <option value="">Select Year</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="reportMonthSelect" class="form-control" onchange="loadReportForSelection()">
+                            <option value="">Select Month</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Report Content -->
+                <div id="reportContent" style="display: none;">
+                    <h6 id="reportTitle" style="margin-top: 20px; color: #667eea;"></h6>
+
+                    <!-- Report Summary Stats -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="stat-box">
+                                <h6>Total Plays</h6>
+                                <p id="reportTotalPlays" style="font-size: 1.5em; color: #667eea;">-</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-box">
+                                <h6>Total Listening Time</h6>
+                                <p id="reportTotalTime" style="font-size: 1.5em; color: #667eea;">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Items in Report -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">🎵 Top Tracks</div>
+                                <div class="card-body" id="reportTopTracks"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">🎤 Top Artists</div>
+                                <div class="card-body" id="reportTopArtists"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">💿 Top Albums</div>
+                                <div class="card-body" id="reportTopAlbums"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Filter and Search -->
         <div class="card" style="margin-bottom: 20px;">
             <div class="card-body">
@@ -494,8 +574,174 @@
             });
         }
 
+        // Report functions
+        async function initializeReports() {
+            try {
+                // Show reports card
+                document.getElementById('reportsCard').style.display = '';
+
+                // Load available years
+                const yearsResponse = await fetch('/api/reports/years');
+                const yearsData = await yearsResponse.json();
+                const yearSelect = document.getElementById('reportYearSelect');
+
+                yearsData.years.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    yearSelect.appendChild(option);
+                });
+
+                // Set current year as default
+                const currentYear = new Date().getFullYear();
+                yearSelect.value = currentYear;
+            } catch (error) {
+                console.error('Error initializing reports:', error);
+            }
+        }
+
+        async function loadReport(periodType) {
+            try {
+                document.getElementById('reportContent').style.display = 'none';
+                const response = await fetch(`/api/reports/generate?type=${periodType}`);
+
+                if (!response.ok) {
+                    throw new Error('Failed to load report');
+                }
+
+                const report = await response.json();
+                displayReport(report, periodType);
+            } catch (error) {
+                console.error('Error loading report:', error);
+                document.getElementById('reportContent').innerHTML = '<p class="alert alert-danger">Error loading report. Please try again.</p>';
+            }
+        }
+
+        async function updateReportMonths() {
+            const yearSelect = document.getElementById('reportYearSelect');
+            const monthSelect = document.getElementById('reportMonthSelect');
+            const year = yearSelect.value;
+
+            if (!year) return;
+
+            try {
+                const response = await fetch(`/api/reports/months?year=${year}`);
+                const data = await response.json();
+
+                // Clear existing options
+                monthSelect.innerHTML = '<option value="">Select Month</option>';
+
+                // Add months
+                data.months.forEach(month => {
+                    const option = document.createElement('option');
+                    option.value = month;
+                    option.textContent = new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long' });
+                    monthSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading months:', error);
+            }
+        }
+
+        async function loadReportForSelection() {
+            const yearSelect = document.getElementById('reportYearSelect');
+            const monthSelect = document.getElementById('reportMonthSelect');
+            const year = yearSelect.value;
+            const month = monthSelect.value;
+
+            if (!year || !month) return;
+
+            try {
+                const response = await fetch(`/api/reports/generate/month?year=${year}&month=${month}`);
+
+                if (!response.ok) {
+                    throw new Error('Failed to load report');
+                }
+
+                const report = await response.json();
+                displayReport(report, 'MONTHLY');
+            } catch (error) {
+                console.error('Error loading report:', error);
+                document.getElementById('reportContent').innerHTML = '<p class="alert alert-danger">Error loading report. Please try again.</p>';
+            }
+        }
+
+        function displayReport(report, periodType) {
+            // Set report title
+            const titleEl = document.getElementById('reportTitle');
+            if (periodType === 'DAILY') {
+                titleEl.textContent = `Daily Report - ${report.periodDescription}`;
+            } else if (periodType === 'WEEKLY') {
+                titleEl.textContent = `Weekly Report - ${report.periodDescription}`;
+            } else if (periodType === 'MONTHLY') {
+                titleEl.textContent = `Monthly Report - ${report.periodDescription}`;
+            } else if (periodType === 'ANNUAL') {
+                titleEl.textContent = `Annual Report - ${report.periodDescription}`;
+            }
+
+            // Set stats
+            document.getElementById('reportTotalPlays').textContent = report.totalPlaysInPeriod;
+            document.getElementById('reportTotalTime').textContent = formatTime(report.totalListeningTimeMs);
+
+            // Display top tracks, artists, albums
+            displayReportItems(report.topTracks, 'reportTopTracks');
+            displayReportItems(report.topArtists, 'reportTopArtists');
+            displayReportItems(report.topAlbums, 'reportTopAlbums');
+
+            // Show report content
+            document.getElementById('reportContent').style.display = '';
+        }
+
+        function displayReportItems(items, elementId) {
+            const container = document.getElementById(elementId);
+
+            if (!items || items.length === 0) {
+                container.innerHTML = '<p class="text-muted">No data available</p>';
+                return;
+            }
+
+            let html = '';
+            items.slice(0, 5).forEach((item, index) => {
+                const score = item.metricScore || 0;
+                html += `
+                    <div class="track-item" style="padding: 10px; border-bottom: 1px solid #eee;">
+                        <div style="flex-grow: 1;">
+                            <h6 style="margin: 0; color: #333;">${index + 1}. ${item.name}</h6>
+                            <p style="margin: 3px 0 0 0; color: #999; font-size: 0.85em;">${item.musicEntityType}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <strong style="color: #667eea;">${score}</strong>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function formatTime(milliseconds) {
+            const seconds = Math.floor(milliseconds / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) {
+                return `${days}d ${hours % 24}h`;
+            } else if (hours > 0) {
+                return `${hours}h ${minutes % 60}m`;
+            } else if (minutes > 0) {
+                return `${minutes}m`;
+            } else {
+                return `${seconds}s`;
+            }
+        }
+
         // Load on page load
-        window.addEventListener('load', loadUserInfo);
+        window.addEventListener('load', () => {
+            loadUserInfo();
+            initializeReports();
+        });
+
     </script>
 </body>
 </html>

@@ -182,4 +182,8 @@ public class Track implements MusicEntity {
     public String getImageUrl() {
         return this.album.getImageUrl();
     }
+
+    public MusicEntityType getType() {
+        return MusicEntityType.TRACK;
+    }
 }

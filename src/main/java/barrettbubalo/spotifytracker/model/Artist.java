@@ -54,4 +54,22 @@ public class Artist implements MusicEntity {
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
+
+    public MusicEntityType getType() {
+        return MusicEntityType.ARTIST;
+    }
+
+    // For preventing incorrect comparisions when pbjects are fetched from database by JPA
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Artist artist = (Artist) o;
+        return id != null && id.equals(artist.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return spotifyId != null ? spotifyId.hashCode() : 0;
+    }
 }

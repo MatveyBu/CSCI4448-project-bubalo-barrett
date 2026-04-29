@@ -113,4 +113,8 @@ public class Album implements MusicEntity {
     public void setFirstSeenAt(LocalDateTime firstSeenAt) {
         this.firstSeenAt = firstSeenAt;
     }
+
+    public MusicEntityType getType() {
+        return MusicEntityType.ALBUM;
+    }
 }

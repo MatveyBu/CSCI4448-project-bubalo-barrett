@@ -5,5 +5,5 @@ import barrettbubalo.spotifytracker.model.ListeningRecord;
 import java.util.List;
 
 public interface RankingStrategy {
-    List<RankedItem> rank(List<ListeningRecord> records);
+    List<RankedItem> rank(List<ListeningRecord> records, MusicEntityExtractor exctractor);
 }

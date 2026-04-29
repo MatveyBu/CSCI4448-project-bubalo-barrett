@@ -4,4 +4,5 @@ public interface MusicEntity {
     String getName();
     String getSpotifyId();
     String getImageUrl();
+    MusicEntityType getType();
 }

@@ -1,45 +1,30 @@
 package barrettbubalo.spotifytracker.patterns.strategy;
 
+import barrettbubalo.spotifytracker.model.*;
+
 public class RankedItem {
-    private RankedItemType type;
-    private String name;
-    private String spotifyId;
+    private MusicEntity musicEntity;
     private int rank;
     private int metricScore;
     private MetricType metricType;
-    private String imageUrl;
 
-    public RankedItem(RankedItemType type, String name, String spotifyId, int rank, int metricScore, MetricType metricType) {
-        this.type = type;
-        this.name = name;
-        this.spotifyId = spotifyId;
+    public RankedItem(MusicEntity musicEntity, int rank, int metricScore, MetricType metricType) {
+        this.musicEntity = musicEntity;
         this.rank = rank;
         this.metricScore = metricScore;
         this.metricType = metricType;
     }
 
-    public RankedItemType getType() {
-        return this.type;
-    }
-
-    public void setType(RankedItemType type) {
-        this.type = type;
+    public MusicEntityType getMusicEntityType() {
+        return this.musicEntity.getType();
     }
 
     public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
+        return this.musicEntity.getName();
     }
 
     public String getSpotifyId() {
-        return spotifyId;
-    }
-
-    public void setSpotifyId(String spotifyId) {
-        this.spotifyId = spotifyId;
+        return this.musicEntity.getSpotifyId();
     }
 
     public int getRank() {
@@ -67,10 +52,6 @@ public class RankedItem {
     }
 
     public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
+        return this.musicEntity.getImageUrl();
     }
 }

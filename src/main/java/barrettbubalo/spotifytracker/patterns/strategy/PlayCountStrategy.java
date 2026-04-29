@@ -1,7 +1,6 @@
 package barrettbubalo.spotifytracker.patterns.strategy;
 
 import barrettbubalo.spotifytracker.model.ListeningRecord;
-import barrettbubalo.spotifytracker.model.Track;
 import barrettbubalo.spotifytracker.model.MusicEntity;
 
 import java.util.ArrayList;
@@ -40,12 +39,10 @@ public class PlayCountStrategy implements RankingStrategy {
             }
 
             RankedItem item = new RankedItem(
-                entity.getEntityType(),
-                entity.getName(),
-                entity.getSpotifyId(),
+                entity,
                 rank,
                 playCount,
-                0
+                MetricType.PLAY_COUNT
             );
 
             rankedItems.add(item);

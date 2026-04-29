@@ -186,4 +186,18 @@ public class Track implements MusicEntity {
     public MusicEntityType getType() {
         return MusicEntityType.TRACK;
     }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Track track = (Track) o;
+        return this.id != null && this.id.equals(track.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return this.id != null ? this.id.hashCode() : 0;
+    }
 }

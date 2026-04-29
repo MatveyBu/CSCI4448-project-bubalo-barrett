@@ -7,17 +7,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class PlayCountStrategy extends RankingStrategy {
+public class TotalListeningTimeStrategy extends RankingStrategy {
 
     @Override
     public List<RankedItem> rank(List<ListeningRecord> records, MusicEntityExtractor extractor) {
-        Map<MusicEntity, Integer> playCounts = new HashMap<>();
+        Map<MusicEntity, Integer> totalDurations = new HashMap<>();
 
         for (ListeningRecord record : records) {
             MusicEntity item = extractor.extract(record);
-            playCounts.merge(item, 1, Integer::sum);
+            totalDurations.merge(item, record.getTrack().getDurationMs(), Integer::sum);
         }
 
-        return buildRankedItems(playCounts, MetricType.PLAY_COUNT);
+        return buildRankedItems(totalDurations, MetricType.LISTENING_TIME);
     }
 }

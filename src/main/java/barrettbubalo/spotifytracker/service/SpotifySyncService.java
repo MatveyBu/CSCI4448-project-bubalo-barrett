@@ -13,18 +13,13 @@ import barrettbubalo.spotifytracker.repository.AlbumRepository;
 import barrettbubalo.spotifytracker.model.ArtistBuilder;
 import barrettbubalo.spotifytracker.model.AlbumBuilder;
 import barrettbubalo.spotifytracker.model.TrackBuilder;
+import barrettbubalo.spotifytracker.model.*;
+import barrettbubalo.spotifytracker.repository.*;
+import barrettbubalo.spotifytracker.patterns.observer.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.LocalDateTime;
@@ -33,7 +28,7 @@ import java.util.*;
 
 
 @Service
-public class SpotifySyncService {
+public class SpotifySyncService implements SyncEventPublisher{
 
     @Autowired
     private AccountRepository accountRepository;
@@ -56,9 +51,18 @@ public class SpotifySyncService {
     private static final int MAX_RECENT_TRACKS = 10;
     private static final int IGNORE_AFTER = 0;
 
+    private List<SyncEventListener> syncListeners;
+
+    @Autowired
+    public SpotifySyncService(List<SyncEventListener> listeners) {
+        this.syncListeners = listeners;
+    }
+
     public void syncRecentlyPlayed(Account account) {
         JsonNode response = spotifyApiClient.getRecentlyPlayed(account, MAX_RECENT_TRACKS, IGNORE_AFTER);
         JsonNode items = response.get("items");
+
+        List<ListeningRecord> newListeningRecords = new ArrayList<>();
 
         for (JsonNode item : items) {
             JsonNode trackNode = item.get("track");
@@ -127,8 +131,13 @@ public class SpotifySyncService {
             if (!listeningRecordRepository.existsByAccountAndTrackAndPlayedAt(account, track, playedAt)) {
                 ListeningRecord record = new ListeningRecord(account, track, playedAt);
                 listeningRecordRepository.save(record);
+                newListeningRecords.add(record);
             }
         }
+
+        // notify observers
+        SyncEvent event = new SyncEvent(account, newListeningRecords, LocalDateTime.now());
+        notifyListeners(event);
     }
 
 
@@ -142,4 +151,19 @@ public class SpotifySyncService {
         }
     }
 
+
+    // --- Observer Pattern stuff ---
+    public void addListener(SyncEventListener listener) {
+        syncListeners.add(listener);
+    }
+
+    public void removeListener(SyncEventListener listener) {
+        syncListeners.remove(listener);
+    }
+
+    public void notifyListeners(SyncEvent event) {
+        for (SyncEventListener listener : syncListeners) {
+            listener.onSyncComplete(event);
+        }
+    }
 }

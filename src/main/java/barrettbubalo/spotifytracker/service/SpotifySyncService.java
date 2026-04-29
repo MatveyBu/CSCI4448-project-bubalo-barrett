@@ -6,6 +6,10 @@ import barrettbubalo.spotifytracker.repository.TrackRepository;
 import barrettbubalo.spotifytracker.model.Track;
 import barrettbubalo.spotifytracker.repository.ListeningRecordRepository;
 import barrettbubalo.spotifytracker.model.ListeningRecord;
+import barrettbubalo.spotifytracker.model.Artist;
+import barrettbubalo.spotifytracker.repository.ArtistRepository;
+import barrettbubalo.spotifytracker.model.Album;
+import barrettbubalo.spotifytracker.repository.AlbumRepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,7 +44,13 @@ public class SpotifySyncService {
     @Autowired
     private SpotifyApiClient spotifyApiClient;
 
-    private static final int MAX_RECENT_TRACKS = 20;
+    @Autowired 
+    private ArtistRepository artistRepository;
+
+    @Autowired
+    private AlbumRepository albumRepository;
+
+    private static final int MAX_RECENT_TRACKS = 10;
     private static final int IGNORE_AFTER = 0;
 
     public void syncRecentlyPlayed(Account account) {
@@ -50,27 +60,66 @@ public class SpotifySyncService {
         for (JsonNode item : items) {
             JsonNode trackNode = item.get("track");
 
-            String spotifyId = trackNode.get("id").asText();
-            String name = trackNode.get("name").asText();
-            int durationMs = trackNode.get("duration_ms").asInt();
-            // Add these later, they will require querying for Artist and Album objects
-            // String artistName = trackNode.get("artists").get(0).get("name").asText();
-            // String albumName = trackNode.get("album").get("name").asText();
-            //
+            String trackSpotifyId = trackNode.get("id").asText();
+            String trackName = trackNode.get("name").asText();
+            int trackDurationMs = trackNode.get("duration_ms").asInt();
+
+            // Main Artist Info
+            String mainArtistSpotifyId = trackNode.get("artists").get(0).get("id").asText();
+            String mainArtistName = trackNode.get("artists").get(0).get("name").asText();
+
+            // Album Info
+            String albumSpotifyId = trackNode.get("album").get("id").asText();
+            String albumName = trackNode.get("album").get("name").asText();
+            String albumImageUrl = trackNode.get("album").get("images").get(0).get("url").asText();
+
+            // Album Artist Info
+            String albumArtistSpotifyId = trackNode.get("album").get("artists").get(0).get("id").asText();
+            String albumArtistName = trackNode.get("album").get("artists").get(0).get("name").asText();
+
+
             String playedAtStr = item.get("played_at").asText();
             LocalDateTime playedAt = LocalDateTime.parse(
                 playedAtStr, 
                 DateTimeFormatter.ISO_DATE_TIME
             );
 
-            Track track = trackRepository.findBySpotifyId(spotifyId)
+            Artist mainArtist = artistRepository.findBySpotifyId(mainArtistSpotifyId)
+                .orElseGet(() -> {
+                    Artist newArtist  = new Artist();
+                    newArtist.setSpotifyId(mainArtistSpotifyId);
+                    newArtist.setName(mainArtistName);
+                    return artistRepository.save(newArtist);
+                });
+
+            Artist albumArtist = artistRepository.findBySpotifyId(albumArtistSpotifyId)
+                .orElseGet(() -> {
+                    Artist newArtist  = new Artist();
+                    newArtist.setSpotifyId(albumArtistSpotifyId);
+                    newArtist.setName(albumArtistName);
+                    return artistRepository.save(newArtist);
+                });
+
+            Album album = albumRepository.findBySpotifyId(albumSpotifyId)
+                .orElseGet(() -> {
+                    Album newAlbum = new Album();
+                    newAlbum.setSpotifyId(albumSpotifyId);
+                    newAlbum.setName(albumName);
+                    newAlbum.setMainArtist(albumArtist);
+                    newAlbum.setImageUrl(albumImageUrl);
+                    return albumRepository.save(newAlbum);
+                });
+
+            Track track = trackRepository.findBySpotifyId(trackSpotifyId)
                 .orElseGet(() -> {
                     Track newTrack = new Track();
-                    newTrack.setSpotifyId(spotifyId);
-                    newTrack.setName(name);
-                    newTrack.setDurationMs(durationMs);
+                    newTrack.setSpotifyId(trackSpotifyId);
+                    newTrack.setName(trackName);
+                    newTrack.setDurationMs(trackDurationMs);
+                    newTrack.setMainArtist(mainArtist);
+                    newTrack.setAlbum(album);
                     return trackRepository.save(newTrack);
-                });
+                });     
 
             if (!listeningRecordRepository.existsByAccountAndTrackAndPlayedAt(account, track, playedAt)) {
                 ListeningRecord record = new ListeningRecord(account, track, playedAt);

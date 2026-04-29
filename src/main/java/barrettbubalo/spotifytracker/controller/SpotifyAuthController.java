@@ -50,6 +50,14 @@ public class SpotifyAuthController {
     }
 
     @GetMapping("/callback")
+    public ResponseEntity<?> callback(@RequestParam String code) {
+        Account account = accountRepository.findByEmail("test@test.com").orElseThrow();
+        spotifyApiClient.exchangeCodeForTokens(account, code);
+        return ResponseEntity.ok("Spotify connected!");
+    }
+
+    /* real /callback
+    @GetMapping("/callback")
     public ResponseEntity<?> callback(@RequestParam String code, HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("accountId") == null) {
@@ -64,4 +72,5 @@ public class SpotifyAuthController {
         return ResponseEntity.ok("Spotify connected");
         
     }
+    */
 }

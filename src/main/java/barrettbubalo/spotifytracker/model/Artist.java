@@ -7,7 +7,7 @@ import java.util.*;
 
 @Entity
 @Table(name = "artists")
-public class Artist {
+public class Artist implements MusicEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -17,6 +17,8 @@ public class Artist {
 
     @Column(unique = true)
     private String spotifyId;
+
+    private String imageUrl;
 
     public Artist() {}
 
@@ -43,5 +45,13 @@ public class Artist {
 
     public void setSpotifyId(String spotifyId) {
         this.spotifyId = spotifyId;
+    }
+
+    public String getImageUrl() {
+        return this.imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

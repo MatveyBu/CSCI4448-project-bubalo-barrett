@@ -7,7 +7,7 @@ import java.util.*;
 
 @Entity
 @Table(name = "albums")
-public class Album {
+public class Album implements MusicEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

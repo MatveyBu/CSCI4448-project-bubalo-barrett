@@ -7,7 +7,7 @@ import java.util.*;
 
 @Entity
 @Table(name = "tracks")
-public class Track {
+public class Track implements MusicEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,10 +20,9 @@ public class Track {
     @Column(nullable = false)
     private String name;
 
-    // could replace with artist entity in future
     @ManyToOne
-    //@JoinColumn(name = "main_artist_id", nullable = false)
-    @JoinColumn(name = "main_artist_id")
+    @JoinColumn(name = "main_artist_id", nullable = false)
+    //@JoinColumn(name = "main_artist_id")
     private Artist mainArtist;
 
     @ManyToMany
@@ -178,5 +177,9 @@ public class Track {
 
     public void setFirstSeenAt(LocalDateTime firstSeenAt) {
         this.firstSeenAt = firstSeenAt;
+    }
+
+    public String getImageUrl() {
+        return this.album.getImageUrl();
     }
 }

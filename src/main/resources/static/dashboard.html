@@ -20,7 +20,14 @@
             border: none;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .card-body {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 400px;
         }
         .card-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -83,6 +90,17 @@
             padding: 50px;
             color: #999;
         }
+        .rankings-container {
+            margin-bottom: 50px;
+        }
+        .rankings-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+            margin-top: 20px;
+        }
+
     </style>
 </head>
 <body>
@@ -158,6 +176,80 @@
             </div>
         </div>
 
+        <!-- Rankings -->
+        <div class="rankings-container">
+            <div class="rankings-title">📊 Top Charts - By Play Count</div>
+            <div class="row rankings-row" id="rankingsRow" style="display: none;">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">⭐ Top Artists</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="topArtistsSection" class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">🎵 Top Tracks</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="topTracksSection" class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">💿 Top Albums</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="topAlbumsSection" class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rankings by Listening Time -->
+        <div class="rankings-container">
+            <div class="rankings-title">⏱️ Top Charts - By Listening Time</div>
+            <div class="row rankings-row" id="timeRankingsRow" style="display: none;">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">⭐ Top Artists</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="topArtistsTimeSection" class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">🎵 Top Tracks</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="topTracksTimeSection" class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">💿 Top Albums</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="topAlbumsTimeSection" class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Listening History -->
         <div class="card">
             <div class="card-header">
@@ -194,6 +286,76 @@
             return response.json();
         }
 
+        async function loadRankings() {
+            try {
+                // Load top items by play count
+                await loadTopItems('TRACK', 'PLAY_COUNT', 'topTracksSection');
+                await loadTopItems('ARTIST', 'PLAY_COUNT', 'topArtistsSection');
+                await loadTopItems('ALBUM', 'PLAY_COUNT', 'topAlbumsSection');
+
+                // Load top items by listening time
+                await loadTopItems('TRACK', 'LISTENING_TIME', 'topTracksTimeSection');
+                await loadTopItems('ARTIST', 'LISTENING_TIME', 'topArtistsTimeSection');
+                await loadTopItems('ALBUM', 'LISTENING_TIME', 'topAlbumsTimeSection');
+
+                // Show rankings
+                document.getElementById('rankingsRow').style.display = '';
+                document.getElementById('timeRankingsRow').style.display = '';
+            } catch (error) {
+                console.error('Error loading rankings:', error);
+            }
+        }
+
+        async function loadTopItems(entity, metric, elementId) {
+            try {
+                const response = await fetch(`/api/stats/top?entity=${entity}&metric=${metric}&limit=10`);
+                if (!response.ok) {
+                    document.getElementById(elementId).innerHTML = '<p class="text-muted">No data available</p>';
+                    return;
+                }
+
+                const items = await response.json();
+                if (!items || items.length === 0) {
+                    document.getElementById(elementId).innerHTML = '<p class="text-muted">No data available</p>';
+                    return;
+                }
+
+                let html = '';
+                items.forEach((item, index) => {
+                    const score = metric === 'LISTENING_TIME' ? formatTime(item.metricScore) : item.metricScore;
+                    html += `
+                        <div class="track-item">
+                            <div style="flex-grow: 1;">
+                                <div class="track-info">
+                                    <h6>#${item.rank} ${item.name}</h6>
+                                    <p>${score}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById(elementId).innerHTML = html;
+            } catch (error) {
+                console.error(`Error loading ${elementId}:`, error);
+                document.getElementById(elementId).innerHTML = '<p class="text-muted">Error loading data</p>';
+            }
+        }
+
+        function formatTime(milliseconds) {
+            const seconds = Math.floor(milliseconds / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+
+            if (hours > 0) {
+                return `${hours}h ${minutes % 60}m`;
+            } else if (minutes > 0) {
+                return `${minutes}m`;
+            } else {
+                return `${seconds}s`;
+            }
+        }
+
         async function loadUserInfo() {
             const user = await checkAuth();
             const userSection = document.getElementById('userSection');
@@ -205,9 +367,10 @@
             `;
 
             // Show stats row
-            document.getElementById('statsRow').style.display = 'grid';
+            document.getElementById('statsRow').style.display = '';
 
             loadListeningHistory();
+            loadRankings();
         }
 
         async function loadListeningHistory() {

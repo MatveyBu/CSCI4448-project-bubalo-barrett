@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/stats")
 public class StatsController {
@@ -31,6 +33,7 @@ public class StatsController {
     @GetMapping("/top")
     public ResponseEntity<?> getTop(@RequestParam String entity,
                                      @RequestParam(defaultValue = "PLAY_COUNT") String metric,
+                                     @RequestParam(defaultValue = "10") int limit,
                                      HttpServletRequest request) {
         // HttpSession session = request.getSession(false);
         // TODO: restore session-based auth later
@@ -40,7 +43,8 @@ public class StatsController {
         MusicEntityType entityType = MusicEntityType.valueOf(entity.toUpperCase());
         MetricType metricType = MetricType.valueOf(metric.toUpperCase());
 
-        return ResponseEntity.ok(statsService.getTopItems(accountId, entityType, metricType));
+        List<RankedItem> items = statsService.getTopItems(accountId, entityType, metricType);
+        return ResponseEntity.ok(items.stream().limit(limit).toList());
     }
 
     @GetMapping("/milestones")

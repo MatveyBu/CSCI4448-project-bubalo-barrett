@@ -65,11 +65,11 @@ public class Artist implements MusicEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Artist artist = (Artist) o;
-        return id != null && id.equals(artist.getId());
+        return this.id != null && this.id.equals(artist.getId());
     }
 
     @Override
     public int hashCode() {
-        return spotifyId != null ? spotifyId.hashCode() : 0;
+        return this.id != null ? this.id.hashCode() : 0;
     }
 }

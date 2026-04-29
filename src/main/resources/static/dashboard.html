@@ -100,15 +100,138 @@
             margin-bottom: 20px;
             margin-top: 20px;
         }
-
+        .notification-container {
+            position: relative;
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.7em;
+            font-weight: bold;
+        }
+        .notification-dropdown {
+            position: absolute;
+            top: 40px;
+            right: 0;
+            width: 350px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            max-height: 400px;
+            overflow: hidden;
+        }
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+        .notification-header .btn-link {
+            color: white;
+            text-decoration: none;
+            font-size: 0.85em;
+        }
+        .notification-list {
+            max-height: 340px;
+            overflow-y: auto;
+        }
+        .notification-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .notification-item:hover {
+            background: #f9f9f9;
+        }
+        .notification-item.unseen {
+            background: #f0f4ff;
+            border-left: 3px solid #667eea;
+        }
+        .notification-item .notification-message {
+            margin: 0;
+            color: #333;
+            font-size: 0.9em;
+        }
+        .notification-item .notification-time {
+            margin: 4px 0 0 0;
+            color: #999;
+            font-size: 0.75em;
+        }
+        .notification-item .notification-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .notification-type.MILESTONE {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .notification-type.STREAK {
+            background: #d4edda;
+            color: #155724;
+        }
+        .notification-type.GENERAL {
+            background: #cce5ff;
+            color: #004085;
+        }
+        .notification-toast {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            padding: 15px 20px;
+            z-index: 2000;
+            animation: slideIn 0.3s ease-out;
+            border-left: 4px solid #667eea;
+            max-width: 350px;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
+    <!-- Navigation with Notification Bell -->
     <nav class="navbar navbar-dark">
         <div class="container-fluid">
             <span class="navbar-brand">🎵 Spotify Tracker</span>
-            <div>
+            <div style="display: flex; align-items: center;">
+                <!-- Notification Bell -->
+                <div class="notification-container" style="position: relative; margin-right: 15px;">
+                    <button class="btn btn-light btn-sm" onclick="toggleNotifications()" id="notificationBell">
+                        🔔 <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
+                    </button>
+                    <div id="notificationDropdown" class="notification-dropdown" style="display: none;">
+                        <div class="notification-header">
+                            <strong>Notifications</strong>
+                            <button class="btn btn-sm btn-link" onclick="markAllSeen()">Mark all read</button>
+                        </div>
+                        <div id="notificationList" class="notification-list">
+                            <p class="text-muted" style="padding: 15px; text-align: center;">No notifications</p>
+                        </div>
+                    </div>
+                </div>
                 <a href="/profile.html" class="btn btn-light btn-sm me-2">Profile</a>
                 <button class="btn btn-light btn-sm" onclick="logout()">Logout</button>
             </div>
@@ -148,7 +271,6 @@
                 </div>
             </div>
         </div>
-
 
         <!-- Rankings -->
         <div class="rankings-container">
@@ -230,8 +352,6 @@
                 <!-- Report Content -->
                 <div id="reportContent" style="display: none;">
                     <h6 id="reportTitle" style="margin-top: 20px; color: #667eea;"></h6>
-
-                    <!-- Report Summary Stats -->
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <div class="stat-box">
@@ -246,8 +366,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Top Items in Report -->
                     <div class="row">
                         <div class="col-md-4">
                             <div class="card">
@@ -322,20 +440,21 @@
     </div>
 
     <script>
-        // Store all records globally for filtering
         let allRecords = [];
         let currentMetric = 'PLAY_COUNT';
+        let notificationDropdownOpen = false;
+        let previousNotificationCount = 0;
 
+        // ==================== Auth ====================
         async function checkAuth() {
-            const response = await fetch('/api/auth/me', {
-                credentials: 'include'
-            });
+            const response = await fetch('/api/auth/me', { credentials: 'include' });
             if (!response.ok) {
                 window.location.href = '/login.html';
             }
             return response.json();
         }
 
+        // ==================== Rankings ====================
         function toggleMetric() {
             currentMetric = currentMetric === 'PLAY_COUNT' ? 'LISTENING_TIME' : 'PLAY_COUNT';
             const button = document.getElementById('metricToggle');
@@ -347,12 +466,9 @@
 
         async function loadRankings() {
             try {
-                // Load top items with current metric
                 await loadTopItems('TRACK', currentMetric, 'topTracksSection');
                 await loadTopItems('ARTIST', currentMetric, 'topArtistsSection');
                 await loadTopItems('ALBUM', currentMetric, 'topAlbumsSection');
-
-                // Show rankings
                 document.getElementById('rankingsRow').style.display = '';
             } catch (error) {
                 console.error('Error loading rankings:', error);
@@ -366,15 +482,13 @@
                     document.getElementById(elementId).innerHTML = '<p class="text-muted">No data available</p>';
                     return;
                 }
-
                 const items = await response.json();
                 if (!items || items.length === 0) {
                     document.getElementById(elementId).innerHTML = '<p class="text-muted">No data available</p>';
                     return;
                 }
-
                 let html = '';
-                items.forEach((item, index) => {
+                items.forEach((item) => {
                     const score = metric === 'LISTENING_TIME' ? formatTime(item.metricScore) : item.metricScore;
                     html += `
                         <div class="track-item">
@@ -387,7 +501,6 @@
                         </div>
                     `;
                 });
-
                 document.getElementById(elementId).innerHTML = html;
             } catch (error) {
                 console.error(`Error loading ${elementId}:`, error);
@@ -395,20 +508,7 @@
             }
         }
 
-        function formatTime(milliseconds) {
-            const seconds = Math.floor(milliseconds / 1000);
-            const minutes = Math.floor(seconds / 60);
-            const hours = Math.floor(minutes / 60);
-
-            if (hours > 0) {
-                return `${hours}h ${minutes % 60}m`;
-            } else if (minutes > 0) {
-                return `${minutes}m`;
-            } else {
-                return `${seconds}s`;
-            }
-        }
-
+        // ==================== User Info ====================
         async function loadUserInfo() {
             const user = await checkAuth();
             const userSection = document.getElementById('userSection');
@@ -418,50 +518,35 @@
                     <p style="color: #666;">Email: ${user.email}</p>
                 </div>
             `;
-
-            // Show stats row
             document.getElementById('statsRow').style.display = '';
-
             loadListeningHistory();
             loadRankings();
         }
 
+        // ==================== Listening History ====================
         async function loadListeningHistory() {
             const user = await checkAuth();
             const historySection = document.getElementById('historySection');
-
             try {
-                const response = await fetch(`/api/spotify/history/${user.id}`, {
-                    credentials: 'include'
-                });
-
+                const response = await fetch(`/api/spotify/history/${user.id}`, { credentials: 'include' });
                 if (!response.ok && response.status === 404) {
-                    // No endpoint yet, show connect spotify
                     document.getElementById('connectSpotifySection').style.display = 'block';
                     historySection.innerHTML = '<p class="text-muted">Connect your Spotify account to view your listening history</p>';
                     document.getElementById('spotifyStatus').innerText = '❌ Not Connected';
                     return;
                 }
-
                 const records = await response.json();
-
                 if (!records || records.length === 0) {
                     historySection.innerHTML = '<p class="text-muted">No listening history yet. Connect your Spotify account to start tracking!</p>';
                     document.getElementById('spotifyStatus').innerText = '⏳ No Data';
                     document.getElementById('connectSpotifySection').style.display = 'block';
                     return;
                 }
-
-                // Store all records
                 allRecords = records;
-
-                // Display filtered results
                 filterHistory();
-
                 document.getElementById('totalTracks').innerText = records.length;
                 document.getElementById('spotifyStatus').innerText = '✅ Connected';
                 document.getElementById('lastSync').innerText = new Date().toLocaleDateString();
-
             } catch (error) {
                 console.error('Error loading history:', error);
                 historySection.innerHTML = `<div class="alert alert-warning">Could not load listening history. Make sure your Spotify account is connected.</div>`;
@@ -471,20 +556,17 @@
 
         function filterHistory() {
             if (allRecords.length === 0) return;
-
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const sortMethod = document.getElementById('sortSelect').value;
             const limitValue = document.getElementById('limitSelect').value;
             const historySection = document.getElementById('historySection');
 
-            // Filter records
             let filtered = allRecords.filter(record => {
                 const trackName = record.track.name.toLowerCase();
                 const artistName = record.track.mainArtist.name.toLowerCase();
                 return trackName.includes(searchTerm) || artistName.includes(searchTerm);
             });
 
-            // Sort records
             if (sortMethod === 'recent') {
                 filtered.sort((a, b) => new Date(b.playedAt) - new Date(a.playedAt));
             } else if (sortMethod === 'oldest') {
@@ -495,13 +577,11 @@
                 filtered.sort((a, b) => a.track.mainArtist.name.localeCompare(b.track.mainArtist.name));
             }
 
-            // Limit records
             let display = filtered;
             if (limitValue !== 'all') {
                 display = filtered.slice(0, parseInt(limitValue));
             }
 
-            // Display results
             if (display.length === 0) {
                 historySection.innerHTML = '<p class="text-muted">No tracks found matching your search.</p>';
                 return;
@@ -513,7 +593,6 @@
                 const artist = track.mainArtist;
                 const playedAt = new Date(record.playedAt).toLocaleDateString();
                 const playedTime = new Date(record.playedAt).toLocaleTimeString();
-
                 html += `
                     <div class="track-item">
                         <div style="flex-grow: 1;">
@@ -529,23 +608,19 @@
                     </div>
                 `;
             });
-
             historySection.innerHTML = html;
         }
 
+        // ==================== Sync ====================
         async function syncSpotify() {
             const button = document.getElementById('syncButton');
             button.disabled = true;
             button.innerText = '⏳ Syncing...';
-
             try {
-                // Sync endpoint would go here
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 await loadListeningHistory();
                 button.disabled = false;
                 button.innerText = '🔄 Sync Now';
-
-                // Show success message
                 const alert = document.createElement('div');
                 alert.className = 'alert alert-success';
                 alert.innerText = '✅ Sync completed!';
@@ -555,8 +630,6 @@
                 console.error('Sync error:', error);
                 button.disabled = false;
                 button.innerText = '🔄 Sync Now';
-
-                // Show error message
                 const alert = document.createElement('div');
                 alert.className = 'alert alert-danger';
                 alert.innerText = '❌ Error syncing. Please try again.';
@@ -565,34 +638,26 @@
             }
         }
 
+        // ==================== Auth Actions ====================
         function logout() {
-            fetch('/api/auth/logout', {
-                method: 'POST',
-                credentials: 'include'
-            }).then(() => {
+            fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).then(() => {
                 window.location.href = '/login.html';
             });
         }
 
-        // Report functions
+        // ==================== Reports ====================
         async function initializeReports() {
             try {
-                // Show reports card
                 document.getElementById('reportsCard').style.display = '';
-
-                // Load available years
                 const yearsResponse = await fetch('/api/reports/years');
                 const yearsData = await yearsResponse.json();
                 const yearSelect = document.getElementById('reportYearSelect');
-
                 yearsData.years.forEach(year => {
                     const option = document.createElement('option');
                     option.value = year;
                     option.textContent = year;
                     yearSelect.appendChild(option);
                 });
-
-                // Set current year as default
                 const currentYear = new Date().getFullYear();
                 yearSelect.value = currentYear;
             } catch (error) {
@@ -604,11 +669,7 @@
             try {
                 document.getElementById('reportContent').style.display = 'none';
                 const response = await fetch(`/api/reports/generate?type=${periodType}`);
-
-                if (!response.ok) {
-                    throw new Error('Failed to load report');
-                }
-
+                if (!response.ok) throw new Error('Failed to load report');
                 const report = await response.json();
                 displayReport(report, periodType);
             } catch (error) {
@@ -621,17 +682,11 @@
             const yearSelect = document.getElementById('reportYearSelect');
             const monthSelect = document.getElementById('reportMonthSelect');
             const year = yearSelect.value;
-
             if (!year) return;
-
             try {
                 const response = await fetch(`/api/reports/months?year=${year}`);
                 const data = await response.json();
-
-                // Clear existing options
                 monthSelect.innerHTML = '<option value="">Select Month</option>';
-
-                // Add months
                 data.months.forEach(month => {
                     const option = document.createElement('option');
                     option.value = month;
@@ -644,20 +699,12 @@
         }
 
         async function loadReportForSelection() {
-            const yearSelect = document.getElementById('reportYearSelect');
-            const monthSelect = document.getElementById('reportMonthSelect');
-            const year = yearSelect.value;
-            const month = monthSelect.value;
-
+            const year = document.getElementById('reportYearSelect').value;
+            const month = document.getElementById('reportMonthSelect').value;
             if (!year || !month) return;
-
             try {
                 const response = await fetch(`/api/reports/generate/month?year=${year}&month=${month}`);
-
-                if (!response.ok) {
-                    throw new Error('Failed to load report');
-                }
-
+                if (!response.ok) throw new Error('Failed to load report');
                 const report = await response.json();
                 displayReport(report, 'MONTHLY');
             } catch (error) {
@@ -667,39 +714,22 @@
         }
 
         function displayReport(report, periodType) {
-            // Set report title
             const titleEl = document.getElementById('reportTitle');
-            if (periodType === 'DAILY') {
-                titleEl.textContent = `Daily Report - ${report.periodDescription}`;
-            } else if (periodType === 'WEEKLY') {
-                titleEl.textContent = `Weekly Report - ${report.periodDescription}`;
-            } else if (periodType === 'MONTHLY') {
-                titleEl.textContent = `Monthly Report - ${report.periodDescription}`;
-            } else if (periodType === 'ANNUAL') {
-                titleEl.textContent = `Annual Report - ${report.periodDescription}`;
-            }
-
-            // Set stats
+            titleEl.textContent = `${periodType.charAt(0) + periodType.slice(1).toLowerCase()} Report - ${report.periodDescription}`;
             document.getElementById('reportTotalPlays').textContent = report.totalPlaysInPeriod;
             document.getElementById('reportTotalTime').textContent = formatTime(report.totalListeningTimeMs);
-
-            // Display top tracks, artists, albums
             displayReportItems(report.topTracks, 'reportTopTracks');
             displayReportItems(report.topArtists, 'reportTopArtists');
             displayReportItems(report.topAlbums, 'reportTopAlbums');
-
-            // Show report content
             document.getElementById('reportContent').style.display = '';
         }
 
         function displayReportItems(items, elementId) {
             const container = document.getElementById(elementId);
-
             if (!items || items.length === 0) {
                 container.innerHTML = '<p class="text-muted">No data available</p>';
                 return;
             }
-
             let html = '';
             items.slice(0, 5).forEach((item, index) => {
                 const score = item.metricScore || 0;
@@ -715,34 +745,122 @@
                     </div>
                 `;
             });
-
             container.innerHTML = html;
         }
 
+        // ==================== Notifications ====================
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notificationDropdown');
+            notificationDropdownOpen = !notificationDropdownOpen;
+            dropdown.style.display = notificationDropdownOpen ? 'block' : 'none';
+            if (notificationDropdownOpen) {
+                loadAllNotifications();
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const container = document.querySelector('.notification-container');
+            if (container && !container.contains(event.target)) {
+                document.getElementById('notificationDropdown').style.display = 'none';
+                notificationDropdownOpen = false;
+            }
+        });
+
+        async function checkForNewNotifications() {
+            try {
+                const response = await fetch('/api/notifications/unseen');
+                if (!response.ok) return;
+                const notifications = await response.json();
+                const badge = document.getElementById('notificationBadge');
+                if (notifications.length > 0) {
+                    badge.style.display = 'inline';
+                    badge.textContent = notifications.length;
+                    if (notifications.length > previousNotificationCount) {
+                        const newOnes = notifications.slice(0, notifications.length - previousNotificationCount);
+                        newOnes.forEach(n => showNotificationToast(n));
+                    }
+                } else {
+                    badge.style.display = 'none';
+                }
+                previousNotificationCount = notifications.length;
+            } catch (error) {
+                console.error('Error checking notifications:', error);
+            }
+        }
+
+        async function loadAllNotifications() {
+            try {
+                const response = await fetch('/api/notifications/all');
+                if (!response.ok) return;
+                const notifications = await response.json();
+                const list = document.getElementById('notificationList');
+                if (notifications.length === 0) {
+                    list.innerHTML = '<p class="text-muted" style="padding: 15px; text-align: center;">No notifications yet</p>';
+                    return;
+                }
+                let html = '';
+                notifications.forEach(notification => {
+                    const time = new Date(notification.createdAt).toLocaleString();
+                    const seenClass = notification.seen ? '' : 'unseen';
+                    html += `
+                        <div class="notification-item ${seenClass}">
+                            <span class="notification-type ${notification.type}">${notification.type}</span>
+                            <p class="notification-message">${notification.message}</p>
+                            <p class="notification-time">${time}</p>
+                        </div>
+                    `;
+                });
+                list.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        async function markAllSeen() {
+            try {
+                await fetch('/api/notifications/mark-seen', { method: 'POST' });
+                document.getElementById('notificationBadge').style.display = 'none';
+                previousNotificationCount = 0;
+                loadAllNotifications();
+            } catch (error) {
+                console.error('Error marking notifications as seen:', error);
+            }
+        }
+
+        function showNotificationToast(notification) {
+            const toast = document.createElement('div');
+            toast.className = 'notification-toast';
+            toast.innerHTML = `
+                <span class="notification-type ${notification.type}" style="margin-bottom: 5px;">${notification.type}</span>
+                <p style="margin: 5px 0 0 0; color: #333;">${notification.message}</p>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        // ==================== Utility ====================
         function formatTime(milliseconds) {
             const seconds = Math.floor(milliseconds / 1000);
             const minutes = Math.floor(seconds / 60);
             const hours = Math.floor(minutes / 60);
             const days = Math.floor(hours / 24);
-
-            if (days > 0) {
-                return `${days}d ${hours % 24}h`;
-            } else if (hours > 0) {
-                return `${hours}h ${minutes % 60}m`;
-            } else if (minutes > 0) {
-                return `${minutes}m`;
-            } else {
-                return `${seconds}s`;
-            }
+            if (days > 0) return `${days}d ${hours % 24}h`;
+            if (hours > 0) return `${hours}h ${minutes % 60}m`;
+            if (minutes > 0) return `${minutes}m`;
+            return `${seconds}s`;
         }
 
-        // Load on page load
+        // ==================== Initialize ====================
         window.addEventListener('load', () => {
             loadUserInfo();
             initializeReports();
         });
 
+        setInterval(checkForNewNotifications, 10000);
+        checkForNewNotifications();
     </script>
 </body>
 </html>
-

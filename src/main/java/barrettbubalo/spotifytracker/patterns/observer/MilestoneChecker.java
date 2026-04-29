@@ -11,13 +11,20 @@ import java.util.List;
 import java.util.Set;
  
 @Component
-public class MilestoneChecker implements SyncEventListener {
+public class MilestoneChecker implements SyncEventListener, MilestoneEventPublisher {
  
     @Autowired
     private ListeningRecordRepository listeningRecordRepository;
  
     @Autowired
     private MilestoneRepository milestoneRepository;
+
+    private List<MilestoneEventListener> milestoneListeners;
+
+    @Autowired
+    public MilestoneChecker(List<MilestoneEventListener> listeners) {
+        this.milestoneListeners = listeners;
+    } 
  
     private static final int[] PLAY_MILESTONES = {10, 25, 50, 100, 250, 500, 1000};
     private static final int[] TOTAL_MILESTONES = {25, 100, 250, 500, 1000, 5000, 10000};
@@ -48,6 +55,7 @@ public class MilestoneChecker implements SyncEventListener {
                     "Reached " + threshold + " total plays!"
                 );
                 milestoneRepository.save(milestone);
+                notifyListeners(account, milestone);
             }
         }
     }
@@ -74,6 +82,7 @@ public class MilestoneChecker implements SyncEventListener {
                     );
                     milestone.setArtist(artist);
                     milestoneRepository.save(milestone);
+                    notifyListeners(account, milestone);
                 }
             }
         }
@@ -99,6 +108,7 @@ public class MilestoneChecker implements SyncEventListener {
                     );
                     milestone.setTrack(track);
                     milestoneRepository.save(milestone);
+                    notifyListeners(account, milestone);
                 }
             }
         }
@@ -116,5 +126,21 @@ public class MilestoneChecker implements SyncEventListener {
     private boolean alreadyAchievedForTrack(Account account, int threshold, Track track) {
         return milestoneRepository.existsByAccountAndMilestoneTypeAndThresholdAndTrack(
             account, MilestoneType.TRACK_PLAYS, threshold, track);
+    }
+
+
+
+    public void addListener(MilestoneEventListener listener) {
+        milestoneListeners.add(listener);
+    }
+
+    public void removeListener(MilestoneEventListener listener) {
+        milestoneListeners.remove(listener);
+    }
+
+    public void notifyListeners(Account account, Milestone milestone) {
+        for (MilestoneEventListener listener : milestoneListeners) {
+            listener.onMilestoneAchieved(account, milestone);
+        }
     }
 }

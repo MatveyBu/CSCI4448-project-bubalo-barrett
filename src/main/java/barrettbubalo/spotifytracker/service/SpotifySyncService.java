@@ -61,6 +61,7 @@ public class SpotifySyncService implements SyncEventPublisher{
     public void syncRecentlyPlayed(Account account) {
         JsonNode response = spotifyApiClient.getRecentlyPlayed(account, MAX_RECENT_TRACKS, IGNORE_AFTER);
         JsonNode items = response.get("items");
+        System.out.println("Spotify returned " + items.size() + " items"); // debugging
 
         List<ListeningRecord> newListeningRecords = new ArrayList<>();
 
@@ -132,12 +133,21 @@ public class SpotifySyncService implements SyncEventPublisher{
                 ListeningRecord record = new ListeningRecord(account, track, playedAt);
                 listeningRecordRepository.save(record);
                 newListeningRecords.add(record);
+                System.out.println("NEW: " + trackName + " at " + playedAt); //debugging
+            } else {
+                System.out.println("DUPLICATE: " + trackName + " at " + playedAt); // debugging
             }
         }
 
+        System.out.println("Sync complete. New records: " + newListeningRecords.size()); // debugging
+
         // notify observers
         SyncEvent event = new SyncEvent(account, newListeningRecords, LocalDateTime.now());
-        notifyListeners(event);
+        try {
+            notifyListeners(event);
+        } catch (Exception e) {
+            System.out.println("Observer error: " + e.getMessage());
+        }
     }
 
 
@@ -146,6 +156,7 @@ public class SpotifySyncService implements SyncEventPublisher{
 
         // find all accounts with a valid spotify that has verified tokens
         List<Account> accounts = accountRepository.findByRefreshTokenIsNotNull();
+        System.out.println("Sync running. Accounts with tokens: " + accounts.size()); // for debugging
         for (Account account : accounts) {
             syncRecentlyPlayed(account);
         }

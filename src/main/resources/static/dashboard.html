@@ -149,36 +149,15 @@
             </div>
         </div>
 
-        <!-- Filter and Search -->
-        <div class="card" style="margin-bottom: 20px;">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search tracks or artists..." onkeyup="filterHistory()">
-                    </div>
-                    <div class="col-md-3">
-                        <select id="sortSelect" class="form-control" onchange="filterHistory()">
-                            <option value="recent">Most Recent</option>
-                            <option value="oldest">Oldest First</option>
-                            <option value="track">By Track Name</option>
-                            <option value="artist">By Artist</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <select id="limitSelect" class="form-control" onchange="filterHistory()">
-                            <option value="20">Last 20</option>
-                            <option value="50">Last 50</option>
-                            <option value="100">Last 100</option>
-                            <option value="all">All Time</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <!-- Rankings -->
         <div class="rankings-container">
-            <div class="rankings-title">📊 Top Charts - By Play Count</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="rankings-title">📊 Top Charts</div>
+                <button id="metricToggle" class="btn btn-outline-primary" onclick="toggleMetric()">
+                    Switch to Listening Time ⏱️
+                </button>
+            </div>
             <div class="row rankings-row" id="rankingsRow" style="display: none;">
                 <div class="col-md-4">
                     <div class="card">
@@ -213,38 +192,28 @@
             </div>
         </div>
 
-        <!-- Rankings by Listening Time -->
-        <div class="rankings-container">
-            <div class="rankings-title">⏱️ Top Charts - By Listening Time</div>
-            <div class="row rankings-row" id="timeRankingsRow" style="display: none;">
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">⭐ Top Artists</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="topArtistsTimeSection" class="loading">Loading...</div>
-                        </div>
+        <!-- Filter and Search -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search tracks or artists..." onkeyup="filterHistory()">
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">🎵 Top Tracks</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="topTracksTimeSection" class="loading">Loading...</div>
-                        </div>
+                    <div class="col-md-3">
+                        <select id="sortSelect" class="form-control" onchange="filterHistory()">
+                            <option value="recent">Most Recent</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="track">By Track Name</option>
+                            <option value="artist">By Artist</option>
+                        </select>
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">💿 Top Albums</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="topAlbumsTimeSection" class="loading">Loading...</div>
-                        </div>
+                    <div class="col-md-3">
+                        <select id="limitSelect" class="form-control" onchange="filterHistory()">
+                            <option value="20">Last 20</option>
+                            <option value="50">Last 50</option>
+                            <option value="100">Last 100</option>
+                            <option value="all">All Time</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -275,6 +244,7 @@
     <script>
         // Store all records globally for filtering
         let allRecords = [];
+        let currentMetric = 'PLAY_COUNT';
 
         async function checkAuth() {
             const response = await fetch('/api/auth/me', {
@@ -286,21 +256,24 @@
             return response.json();
         }
 
+        function toggleMetric() {
+            currentMetric = currentMetric === 'PLAY_COUNT' ? 'LISTENING_TIME' : 'PLAY_COUNT';
+            const button = document.getElementById('metricToggle');
+            button.innerText = currentMetric === 'PLAY_COUNT'
+                ? 'Switch to Listening Time ⏱️'
+                : 'Switch to Play Count 🎵';
+            loadRankings();
+        }
+
         async function loadRankings() {
             try {
-                // Load top items by play count
-                await loadTopItems('TRACK', 'PLAY_COUNT', 'topTracksSection');
-                await loadTopItems('ARTIST', 'PLAY_COUNT', 'topArtistsSection');
-                await loadTopItems('ALBUM', 'PLAY_COUNT', 'topAlbumsSection');
-
-                // Load top items by listening time
-                await loadTopItems('TRACK', 'LISTENING_TIME', 'topTracksTimeSection');
-                await loadTopItems('ARTIST', 'LISTENING_TIME', 'topArtistsTimeSection');
-                await loadTopItems('ALBUM', 'LISTENING_TIME', 'topAlbumsTimeSection');
+                // Load top items with current metric
+                await loadTopItems('TRACK', currentMetric, 'topTracksSection');
+                await loadTopItems('ARTIST', currentMetric, 'topArtistsSection');
+                await loadTopItems('ALBUM', currentMetric, 'topAlbumsSection');
 
                 // Show rankings
                 document.getElementById('rankingsRow').style.display = '';
-                document.getElementById('timeRankingsRow').style.display = '';
             } catch (error) {
                 console.error('Error loading rankings:', error);
             }

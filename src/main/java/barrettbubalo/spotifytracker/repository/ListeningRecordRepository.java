@@ -11,6 +11,7 @@ import java.util.List;
 
 public interface ListeningRecordRepository extends JpaRepository<ListeningRecord, Long> {
     List<ListeningRecord> findByAccountId(Long accountId);
+    List<ListeningRecord> findByAccountIdOrderByPlayedAtDesc(Long accountId);
     List<ListeningRecord> findByAccountIdAndPlayedAtAfter(Long accountId, LocalDateTime after);
     boolean existsByAccountAndTrackAndPlayedAt(Account account, Track track, LocalDateTime playedAt);
     int countByAccount(Account account);

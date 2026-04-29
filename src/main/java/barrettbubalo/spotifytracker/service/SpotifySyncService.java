@@ -1,5 +1,18 @@
 package barrettbubalo.spotifytracker.service;
 
+import barrettbubalo.spotifytracker.model.Account;
+import barrettbubalo.spotifytracker.repository.AccountRepository;
+import barrettbubalo.spotifytracker.repository.TrackRepository;
+import barrettbubalo.spotifytracker.model.Track;
+import barrettbubalo.spotifytracker.repository.ListeningRecordRepository;
+import barrettbubalo.spotifytracker.model.ListeningRecord;
+import barrettbubalo.spotifytracker.model.Artist;
+import barrettbubalo.spotifytracker.repository.ArtistRepository;
+import barrettbubalo.spotifytracker.model.Album;
+import barrettbubalo.spotifytracker.repository.AlbumRepository;
+import barrettbubalo.spotifytracker.model.ArtistBuilder;
+import barrettbubalo.spotifytracker.model.AlbumBuilder;
+import barrettbubalo.spotifytracker.model.TrackBuilder;
 import barrettbubalo.spotifytracker.model.*;
 import barrettbubalo.spotifytracker.repository.*;
 import barrettbubalo.spotifytracker.patterns.observer.*;
